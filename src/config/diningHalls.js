@@ -11,43 +11,43 @@ const DINING_HALLS = {
 // Hours schema:
 //   Each day key (mon–sun) maps to an object of { mealType: "H:MM AM – H:MM PM" }
 //   or null if the hall is closed that day.
-//   Weekend halls that serve brunch use the "brunch" key instead of breakfast + lunch.
+//   Weekend halls that serve brunch store it under the "lunch" key for simplicity.
 const DINING_HALL_INFO = [
   {
     id: 'gordon-avenue-market',
     name: 'Gordon Dining & Event Center',
     shortName: 'Gordon',
-    mealTypes: ['breakfast', 'lunch', 'dinner', 'brunch'],
+    mealTypes: ['breakfast', 'lunch', 'dinner'],
     hours: {
       mon: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–4:00 PM', dinner: '4:00–8:30 PM' },
       tue: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–4:00 PM', dinner: '4:00–8:30 PM' },
       wed: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–4:00 PM', dinner: '4:00–8:30 PM' },
       thu: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–4:00 PM', dinner: '4:00–8:30 PM' },
       fri: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–4:00 PM', dinner: '4:00–8:30 PM' },
-      sat: { brunch: '9:00 AM–2:00 PM', dinner: '4:00–8:30 PM' },
-      sun: { brunch: '9:00 AM–2:00 PM', dinner: '4:00–8:30 PM' },
+      sat: { lunch: '9:00 AM–2:00 PM', dinner: '4:00–8:30 PM' },
+      sun: { lunch: '9:00 AM–2:00 PM', dinner: '4:00–8:30 PM' },
     },
   },
   {
     id: 'four-lakes-market',
     name: 'Four Lakes Market',
     shortName: 'Four Lakes',
-    mealTypes: ['breakfast', 'lunch', 'dinner', 'brunch'],
+    mealTypes: ['breakfast', 'lunch', 'dinner'],
     hours: {
       mon: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
       tue: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
       wed: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
       thu: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
       fri: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
-      sat: { brunch: '9:00 AM–2:00 PM', dinner: '4:00–8:30 PM' },
-      sun: { brunch: '9:00 AM–2:00 PM', dinner: '4:00–8:30 PM' },
+      sat: { lunch: '9:00 AM–2:00 PM', dinner: '4:00–8:30 PM' },
+      sun: { lunch: '9:00 AM–2:00 PM', dinner: '4:00–8:30 PM' },
     },
   },
   {
     id: 'rhetas-market',
     name: "Rheta's Market",
     shortName: "Rheta's",
-    mealTypes: ['breakfast', 'lunch', 'dinner', 'brunch'],
+    mealTypes: ['breakfast', 'lunch', 'dinner'],
     hours: {
       mon: { breakfast: '7:00–11:00 AM', lunch: '11:00 AM–4:00 PM', dinner: '4:00–8:00 PM' },
       tue: { breakfast: '7:00–11:00 AM', lunch: '11:00 AM–4:00 PM', dinner: '4:00–8:00 PM' },
@@ -55,21 +55,21 @@ const DINING_HALL_INFO = [
       thu: { breakfast: '7:00–11:00 AM', lunch: '11:00 AM–4:00 PM', dinner: '4:00–8:00 PM' },
       fri: { breakfast: '7:00–11:00 AM', lunch: '11:00 AM–4:00 PM', dinner: '4:00–8:00 PM' },
       sat: null,
-      sun: { brunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
+      sun: { lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
     },
   },
   {
     id: 'lizs-market',
     name: "Liz's Market",
     shortName: "Liz's",
-    mealTypes: ['breakfast', 'lunch', 'dinner', 'brunch'],
+    mealTypes: ['breakfast', 'lunch', 'dinner'],
     hours: {
       mon: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
       tue: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
       wed: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
       thu: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
       fri: { breakfast: '7:00–10:00 AM', lunch: '11:00 AM–2:00 PM', dinner: '4:00–8:00 PM' },
-      sat: { brunch: '9:00 AM–2:00 PM', dinner: '4:00–8:30 PM' },
+      sat: { lunch: '9:00 AM–2:00 PM', dinner: '4:00–8:30 PM' },
       sun: null,
     },
   },
@@ -119,7 +119,7 @@ function getTodayCT() {
 /**
  * Returns true if a dining hall is open for a given meal type on a given date.
  * @param {string}  id       - hall id
- * @param {string}  mealType - "breakfast" | "lunch" | "dinner" | "brunch"
+ * @param {string}  mealType - "breakfast" | "lunch" | "dinner"
  * @param {string} [date]    - "YYYY-MM-DD" in CT; defaults to today
  */
 function isOpen(id, mealType, date) {
