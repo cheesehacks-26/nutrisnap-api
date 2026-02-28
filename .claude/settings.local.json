@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST http://localhost:3001/auth/register -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"testbadger@mailinator.com\"\",\"\"password\"\":\"\"TestPass123!\"\"}')",
+      "Bash(curl -s -X POST http://localhost:3001/auth/register -H \"Content-Type: application/json\" --data-raw '{\"\"email\"\":\"\"testbadger@mailinator.com\"\",\"\"password\"\":\"\"TestPass123x\"\"}')",
+      "Bash(__NEW_LINE_09e46df203c25618__ echo \"\")",
+      "Bash(curl -s \"http://localhost:3001/api/log?date=2026-02-28\" -H \"Authorization: Bearer $TOKEN\")"
+    ]
+  }
+}
