@@ -1,16 +1,54 @@
-const { DINING_HALLS } = require('../config/diningHalls');
+const { DINING_HALLS, getTodayCT } = require('../config/diningHalls');
 
 const NUTRISLICE_BASE = 'https://wisc-housingdining.api.nutrislice.com/menu/api/weeks/school';
+const MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
+
+// In-memory cache: key = "hall:meal:date" -> { items, fetchedAt }
+const cache = new Map();
 
 /**
- * Fetch the menu from Nutrislice for a given dining hall, meal type, and date.
- *
- * @param {string} hall     - dining hall id, e.g. "gordon-avenue-market"
- * @param {string} mealType - "breakfast" | "lunch" | "dinner"
- * @param {string} date     - "YYYY-MM-DD"
- * @returns {Promise<object[]>}
+ * Get menu from cache. Falls back to Nutrislice API on cache miss.
  */
 async function fetchMenu(hall, mealType, date) {
+  const key = `${hall}:${mealType}:${date}`;
+  if (cache.has(key)) return cache.get(key).items;
+
+  const items = await fetchFromAPI(hall, mealType, date);
+  cache.set(key, { items, fetchedAt: Date.now() });
+  return items;
+}
+
+/**
+ * Warm the cache for all halls × all meal types for today.
+ * Called once on server start. Logs progress.
+ */
+async function warmCache() {
+  const today = getTodayCT();
+  const halls = Object.keys(DINING_HALLS);
+  console.log(`Warming cache for ${halls.length} halls × ${MEAL_TYPES.length} meals (${today})...`);
+
+  const results = await Promise.allSettled(
+    halls.flatMap((hall) =>
+      MEAL_TYPES.map(async (meal) => {
+        const items = await fetchFromAPI(hall, meal, today);
+        cache.set(`${hall}:${meal}:${today}`, { items, fetchedAt: Date.now() });
+        return { hall, meal, count: items.length };
+      })
+    )
+  );
+
+  let total = 0;
+  for (const r of results) {
+    if (r.status === 'fulfilled') total += r.value.count;
+  }
+  const failed = results.filter((r) => r.status === 'rejected').length;
+  console.log(`Cache warm: ${total} items cached.${failed ? ` (${failed} requests failed)` : ''}`);
+}
+
+/**
+ * Fetch directly from Nutrislice API (no cache).
+ */
+async function fetchFromAPI(hall, mealType, date) {
   const [year, month, day] = date.split('-');
   const url = `${NUTRISLICE_BASE}/${DINING_HALLS[hall]}/menu-type/${mealType}/${year}/${month}/${day}/?format=json`;
 
@@ -27,7 +65,6 @@ async function fetchMenu(hall, mealType, date) {
 
 /**
  * Parse the raw Nutrislice API response into CanteenFoodItem[].
- * The API returns a weeks payload with a `days` array — we find the matching day.
  */
 function parseMenuResponse(data, date, mealType) {
   const days = data?.days ?? [];
@@ -35,8 +72,6 @@ function parseMenuResponse(data, date, mealType) {
   if (!targetDay) return [];
 
   const menuItems = targetDay.menu_items ?? [];
-
-  // Build station_id -> name map from station header items
   const stationNames = buildStationMap(menuItems);
 
   const seen = new Set();
@@ -44,23 +79,15 @@ function parseMenuResponse(data, date, mealType) {
 
   for (const item of menuItems) {
     const food = item?.food;
-    // Skip section titles, station headers, and items without food
     if (!food || typeof food !== 'object' || !food.id) continue;
-
-    // Deduplicate by food_id within a single response
     if (seen.has(food.id)) continue;
     seen.add(food.id);
-
     items.push(parseFoodItem(food, item, stationNames, date, mealType));
   }
 
   return items;
 }
 
-/**
- * Walk menu_items and collect station_id -> station_name from header entries.
- * Station headers have is_station_header=true and carry the human-readable name in `text`.
- */
 function buildStationMap(menuItems) {
   const map = {};
   for (const item of menuItems) {
@@ -71,9 +98,6 @@ function buildStationMap(menuItems) {
   return map;
 }
 
-/**
- * Map a single Nutrislice food + menu_item object to a CanteenFoodItem.
- */
 function parseFoodItem(food, menuItem, stationNames, date, mealType) {
   const n = food.rounded_nutrition_info ?? {};
   const sizeInfo = food.serving_size_info ?? {};
@@ -93,7 +117,6 @@ function parseFoodItem(food, menuItem, stationNames, date, mealType) {
     station: stationName,
     serving_size: servingSize,
     nutrition: {
-      // rounded_nutrition_info already uses g_/mg_ prefixed keys
       calories: toNum(n.calories),
       g_fat: toNum(n.g_fat),
       g_saturated_fat: toNum(n.g_saturated_fat),
@@ -114,9 +137,6 @@ function parseFoodItem(food, menuItem, stationNames, date, mealType) {
   };
 }
 
-/**
- * Nutrislice icons field is: { food_icons: [{ name, slug, ... }], myplate_icons: [] }
- */
 function parseFoodTags(icons) {
   if (!icons) return [];
   const foodIcons = icons.food_icons ?? [];
@@ -128,4 +148,4 @@ function toNum(val) {
   return isNaN(n) ? 0 : n;
 }
 
-module.exports = { fetchMenu };
+module.exports = { fetchMenu, warmCache };
