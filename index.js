@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
+const { warmCache } = require('./src/services/nutrislice');
 const menuRoutes = require('./src/routes/menu');
 const diningHallRoutes = require('./src/routes/diningHalls');
 const authRoutes = require('./src/routes/auth');
@@ -33,4 +34,5 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`BadgerBite API running on port ${PORT}`);
+  warmCache();
 });
