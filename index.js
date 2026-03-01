@@ -12,6 +12,7 @@ const logRoutes = require('./src/routes/log');
 const savedFoodsRoutes = require('./src/routes/savedFoods');
 const { router: targetsRoutes } = require('./src/routes/targets');
 const { router: snapRoutes } = require('./src/routes/snap');
+const historyRoutes = require('./src/routes/history');
 
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/recommend', recommendRoutes);
 app.use('/api/saved-foods', savedFoodsRoutes);
 app.use('/api/targets', targetsRoutes);
 app.use('/api/snap', snapRoutes);
+app.use('/api/history', historyRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'BadgerBite API' });

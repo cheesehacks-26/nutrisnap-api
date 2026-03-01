@@ -8,6 +8,7 @@ const router = express.Router();
 router.post('/', requireAuth, async (req, res) => {
   const { food_id, food_name, quantity, serving_size, calories, protein_g, carbs_g, fat_g, fiber_g, sugar_g, sodium_mg, hall, meal_type } = req.body;
   if (!food_name) return res.status(400).json({ error: 'food_name is required' });
+  if (!hall) return res.status(400).json({ error: 'hall is required' });
 
   const { data, error } = await supabaseAdmin
     .from('meal_logs')
