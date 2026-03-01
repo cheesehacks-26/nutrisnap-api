@@ -8,6 +8,7 @@ const diningHallRoutes = require('./src/routes/diningHalls');
 const authRoutes = require('./src/routes/auth');
 const profileRoutes = require('./src/routes/profile');
 const recommendRoutes = require('./src/routes/recommend');
+const logRoutes = require('./src/routes/log');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,7 +20,6 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/dining-halls', diningHallRoutes);
 app.use('/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/recommend', recommendRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
