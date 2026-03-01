@@ -1,4 +1,5 @@
 const { DINING_HALLS, getTodayCT } = require('../config/diningHalls');
+const { getBYOComponents } = require('../data/byoComponents');
 
 const NUTRISLICE_BASE = 'https://wisc-housingdining.api.nutrislice.com/menu/api/weeks/school';
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
@@ -110,6 +111,9 @@ function parseFoodItem(food, menuItem, stationNames, date, mealType) {
     ? (stationNames[menuItem.station_id] ?? null)
     : null;
 
+  const isBYO = food.has_options_or_sides === true;
+  const byoData = isBYO ? getBYOComponents(food.id) : null;
+
   return {
     food_id: food.id,
     name: food.name ?? 'Unknown',
@@ -131,7 +135,8 @@ function parseFoodItem(food, menuItem, stationNames, date, mealType) {
       mg_potassium: toNum(n.mg_potassium),
     },
     food_tags: parseFoodTags(food.icons),
-    is_build_your_own: food.has_options_or_sides === true,
+    is_build_your_own: isBYO,
+    byo_components: byoData ? byoData.categories : null,
     date,
     meal_type: mealType,
   };
