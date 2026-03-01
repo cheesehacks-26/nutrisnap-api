@@ -22,7 +22,9 @@ const PORT = process.env.PORT || 3001;
 const ALLOWED_ORIGINS = [
   'https://nutrisnap.06-divij-agarwal.workers.dev',
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
 ];
 
 // Explicit preflight: ensure OPTIONS always returns CORS headers (fixes proxy/cache issues on Render)
