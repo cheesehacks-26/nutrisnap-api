@@ -7,10 +7,11 @@ const router = express.Router();
 const VALID_MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
-// GET /api/menu?hall=&meal=&date=
-// date is optional, defaults to today CT
+const VALID_SORTS = ['default', 'station', 'cal_asc', 'cal_desc', 'protein'];
+
+// GET /api/menu?hall=&meal=&date=&sort=&search=&station=&tags=
 router.get('/', async (req, res) => {
-  const { hall, meal, date } = req.query;
+  const { hall, meal, date, sort, search, station, tags } = req.query;
 
   if (!hall) {
     return res.status(400).json({
@@ -47,8 +48,56 @@ router.get('/', async (req, res) => {
 
   try {
     const allItems = await fetchMenu(hall, meal, resolvedDate);
-    const items = allItems.filter(i => !i.is_byo_component);
-    res.json({ hall, meal, date: resolvedDate, count: items.length, items });
+    const baseItems = allItems.filter(i => !i.is_byo_component);
+
+    const stations = [...new Set(baseItems.map(i => i.station).filter(Boolean))];
+
+    let items = baseItems;
+
+    if (station && station !== 'All') {
+      items = items.filter(i => i.station === station);
+    }
+
+    if (tags) {
+      const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
+      if (tagList.length > 0) {
+        items = items.filter(i =>
+          i.is_build_your_own || tagList.every(t => (i.food_tags || []).includes(t))
+        );
+      }
+    }
+
+    if (search && search.trim()) {
+      const q = search.toLowerCase().trim();
+      items = items.filter(i => {
+        if ((i.name || '').toLowerCase().includes(q)) return true;
+        if ((i.station || '').toLowerCase().includes(q)) return true;
+        if (i.byo_components) {
+          return i.byo_components.some(cat =>
+            cat.items.some(sub => sub.name.toLowerCase().includes(q))
+          );
+        }
+        return false;
+      });
+    }
+
+    const sortKey = VALID_SORTS.includes(sort) ? sort : 'default';
+    switch (sortKey) {
+      case 'station':
+        items.sort((a, b) => (a.station || '').localeCompare(b.station || ''));
+        break;
+      case 'cal_asc':
+        items.sort((a, b) => (a.nutrition?.calories ?? 0) - (b.nutrition?.calories ?? 0));
+        break;
+      case 'cal_desc':
+        items.sort((a, b) => (b.nutrition?.calories ?? 0) - (a.nutrition?.calories ?? 0));
+        break;
+      case 'protein':
+        items.sort((a, b) => (b.nutrition?.g_protein ?? 0) - (a.nutrition?.g_protein ?? 0));
+        break;
+    }
+
+    res.json({ hall, meal, date: resolvedDate, count: items.length, stations, items });
   } catch (err) {
     if (err.status === 404) {
       return res.status(404).json({
