@@ -122,10 +122,6 @@ function parseMenuResponse(data, date, mealType) {
 /**
  * For BYO items with no static component data, auto-build categories
  * from BYO-station items already present in the raw menu data.
- */
-/**
- * For BYO items with no static component data, auto-build categories
- * from BYO-station items already present in the raw menu data.
  * Skips BYO parent items and the "Build Your Own" station itself.
  */
 function autoFillUnknownBYO(items, rawMenuItems, stationNames) {
@@ -179,6 +175,7 @@ function autoFillUnknownBYO(items, rawMenuItems, stationNames) {
 
   for (const byo of unknownBYO) {
     byo.byo_components = autoCategories;
+    console.log(`[auto-fill] Unknown BYO "${byo.name}" → ${autoCategories.length} categories, ${autoCategories.reduce((n, c) => n + c.items.length, 0)} items`);
   }
 }
 

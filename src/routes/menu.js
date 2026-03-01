@@ -59,11 +59,24 @@ router.get('/', async (req, res) => {
     }
 
     if (tags) {
+      const EXCLUDE_MAP = {
+        'Gluten-Free': 'Wheat',
+        'Dairy-Free': 'Dairy',
+        'Egg-Free': 'Egg',
+        'Soy-Free': 'Soy',
+      };
       const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
-      if (tagList.length > 0) {
-        items = items.filter(i =>
-          i.is_build_your_own || tagList.every(t => (i.food_tags || []).includes(t))
-        );
+      const includeTags = tagList.filter(t => !EXCLUDE_MAP[t]);
+      const excludeAllergens = tagList.map(t => EXCLUDE_MAP[t]).filter(Boolean);
+
+      if (includeTags.length > 0 || excludeAllergens.length > 0) {
+        items = items.filter(i => {
+          if (i.is_build_your_own) return true;
+          const ft = i.food_tags || [];
+          if (includeTags.length > 0 && !includeTags.every(t => ft.includes(t))) return false;
+          if (excludeAllergens.length > 0 && excludeAllergens.some(a => ft.includes(a))) return false;
+          return true;
+        });
       }
     }
 
