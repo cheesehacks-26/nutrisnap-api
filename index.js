@@ -10,7 +10,10 @@ const profileRoutes = require('./src/routes/profile');
 const recommendRoutes = require('./src/routes/recommend');
 const logRoutes = require('./src/routes/log');
 const savedFoodsRoutes = require('./src/routes/savedFoods');
+const { router: targetsRoutes } = require('./src/routes/targets');
 const snapRoutes = require('./src/routes/snap');
+const historyRoutes = require('./src/routes/history'); 
+
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,7 +28,9 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/log', logRoutes);
 app.use('/api/recommend', recommendRoutes);
 app.use('/api/saved-foods', savedFoodsRoutes);
+app.use('/api/targets', targetsRoutes);
 app.use('/api/snap', snapRoutes);
+app.use('/api/history', historyRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'BadgerBite API' });

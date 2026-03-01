@@ -53,8 +53,31 @@ All authenticated endpoints require `Authorization: Bearer <token>` header.
 | `GET`  | `/api/dining-halls`     | All halls with hours and meal types |
 | `GET`  | `/api/dining-halls/:id` | Single hall details                 |
 
+### Daily Targets
+
+| Method | Endpoint        | Description                                      |
+| ------ | --------------- | ------------------------------------------------ |
+| `POST` | `/api/targets`  | Calculate daily macro targets from profile (BMR)  |
+| `GET`  | `/api/targets`  | Get current daily targets                         |
+
+Auto-recalculates when profile fields (sex, age, weight, height, goal, activity) are updated.
+
+### History
+
+| Method | Endpoint              | Description                                  |
+| ------ | --------------------- | -------------------------------------------- |
+| `GET`  | `/api/history?days=7` | Daily calorie/macro totals for past N days   |
+
+Returns per-day totals + user's targets for chart comparison. Max 30 days.
+
 ### Recommendations
 
 | Method | Endpoint                     | Description                        |
 | ------ | ---------------------------- | ---------------------------------- |
 | `GET`  | `/api/recommend?meal=&date=` | Top 5 items per hall, personalized |
+
+### Snap
+
+| Method | Endpoint     | Description                          |
+| ------ | ------------ | ------------------------------------ |
+| `POST` | `/api/snap`  | Identify food from image via Gemini  |
