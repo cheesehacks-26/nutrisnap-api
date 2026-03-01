@@ -1,5 +1,6 @@
 const express = require('express');
 const { supabaseAdmin, requireAuth } = require('../middleware/auth');
+const { recalcTargets } = require('./targets');
 
 const router = express.Router();
 
@@ -35,6 +36,13 @@ router.put('/', requireAuth, async (req, res) => {
     .select()
     .single();
   if (error) return res.status(500).json({ error: error.message });
+
+  // Auto-recalculate targets if any macro-relevant field changed
+  const macroFields = ['sex', 'age', 'height_in', 'weight_lbs', 'goal', 'activity_level'];
+  if (macroFields.some(f => req.body[f] !== undefined)) {
+    await recalcTargets(req.user.id);
+  }
+
   res.json({ profile: data });
 });
 
