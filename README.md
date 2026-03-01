@@ -81,3 +81,10 @@ Returns per-day totals + user's targets for chart comparison. Max 30 days.
 | Method | Endpoint     | Description                          |
 | ------ | ------------ | ------------------------------------ |
 | `POST` | `/api/snap`  | Identify food from image via Gemini  |
+
+### Additional Public Endpoints
+
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| `GET`  | `/`      | API welcome message |
+| `GET`  | `/health` | Health check |
