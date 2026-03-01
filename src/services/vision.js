@@ -17,9 +17,10 @@ const model = vertexAI.getGenerativeModel({
  * @param {Array}  menuItems    - CanteenFoodItem[] from fetchMenu
  * @param {string} hall         - dining hall name
  * @param {string} meal         - meal type
+ * @param {string} mimeType     - declared MIME type for base64 image
  * @returns {{ matchedIds: number[], unmatchedDescription: string|null }}
  */
-async function identifyFood(base64Image, menuItems, hall, meal) {
+async function identifyFood(base64Image, menuItems, hall, meal, mimeType = 'image/jpeg') {
   // Build menu context for Gemini
   const menuList = menuItems
     .map((item) => `${item.food_id} | ${item.name} | ${item.station || 'General'}`)
@@ -44,8 +45,11 @@ If all items match the menu, set unmatched_description to null.
 If you cannot identify any food, return {"matched_ids": [], "unmatched_description": null}.
 Do not include any text outside the JSON.`;
 
-  // Strip data URL prefix if present
-  const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
+  const dataUrlMatch = base64Image.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  const cleanBase64 = dataUrlMatch ? dataUrlMatch[2] : base64Image;
+  const imageMimeType = dataUrlMatch?.[1] || mimeType || 'image/jpeg';
+  const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  const safeMimeType = allowedMimeTypes.has(imageMimeType) ? imageMimeType : 'image/jpeg';
 
   const result = await model.generateContent({
     contents: [
@@ -55,7 +59,7 @@ Do not include any text outside the JSON.`;
           { text: prompt },
           {
             inlineData: {
-              mimeType: 'image/jpeg',
+              mimeType: safeMimeType,
               data: cleanBase64,
             },
           },
@@ -64,7 +68,10 @@ Do not include any text outside the JSON.`;
     ],
   });
 
-  const text = result.response.candidates[0].content.parts[0].text.trim();
+  const text = result?.response?.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === 'string')?.text?.trim();
+  if (!text) {
+    throw new Error('Vision model returned empty response');
+  }
 
   // Parse JSON from response (handle markdown code blocks)
   const jsonStr = text.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();

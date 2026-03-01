@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
 const { fetchMenu } = require('../services/nutrislice');
 const { identifyFood } = require('../services/vision');
 const { DINING_HALLS, getTodayCT } = require('../config/diningHalls');
@@ -8,9 +7,9 @@ const { DINING_HALLS, getTodayCT } = require('../config/diningHalls');
 const VALID_MEALS = ['breakfast', 'lunch', 'dinner'];
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB base64 limit
 
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const { image, hall, meal } = req.body;
+    const { image, hall, meal, mimeType } = req.body;
 
     // Validate inputs
     if (!image || typeof image !== 'string') {
@@ -40,7 +39,7 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     // Step 2: Send image + menu context to Gemini Vision
-    const { matchedIds, unmatchedDescription } = await identifyFood(image, menuItems, hall, meal);
+    const { matchedIds, unmatchedDescription } = await identifyFood(image, menuItems, hall, meal, mimeType);
 
     // Step 3: Look up matched items with full nutrition
     const menuMap = new Map(menuItems.map((item) => [item.food_id, item]));
@@ -66,6 +65,7 @@ router.post('/', requireAuth, async (req, res) => {
     res.json({
       matched,
       unmatched_description: unmatchedDescription,
+      manual_select: matched.length === 0,
     });
   } catch (err) {
     console.error('Snap error:', err);
