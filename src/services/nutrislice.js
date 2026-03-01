@@ -114,7 +114,72 @@ function parseMenuResponse(data, date, mealType) {
     });
   }
 
+  autoFillUnknownBYO(items, menuItems, stationNames);
+
   return items;
+}
+
+/**
+ * For BYO items with no static component data, auto-build categories
+ * from BYO-station items already present in the raw menu data.
+ */
+/**
+ * For BYO items with no static component data, auto-build categories
+ * from BYO-station items already present in the raw menu data.
+ * Skips BYO parent items and the "Build Your Own" station itself.
+ */
+function autoFillUnknownBYO(items, rawMenuItems, stationNames) {
+  const unknownBYO = items.filter(i => i.is_build_your_own && !i.byo_components);
+  if (unknownBYO.length === 0) return;
+
+  const byoParentIds = new Set(
+    rawMenuItems.filter(mi => mi.food && mi.food.has_options_or_sides).map(mi => mi.food.id)
+  );
+
+  const COMPONENT_STATION = /^(choose your|varies by day|breads|breads\s*-\s*gluten free|vegetables|condiment|toppings|station recipe)/i;
+
+  const byoStationCategories = {};
+  for (const mi of rawMenuItems) {
+    if (!mi.food || mi.is_station_header) continue;
+    if (byoParentIds.has(mi.food.id)) continue;
+    const stName = mi.station_id != null ? (stationNames[mi.station_id] ?? null) : null;
+    if (!stName || !COMPONENT_STATION.test(stName)) continue;
+
+    if (!byoStationCategories[stName]) byoStationCategories[stName] = [];
+    const existing = byoStationCategories[stName];
+    if (existing.some(e => e.name === mi.food.name)) continue;
+
+    const n = mi.food.rounded_nutrition_info ?? {};
+    const sizeInfo = mi.food.serving_size_info ?? {};
+    const servAmt = sizeInfo.serving_size_amount ?? mi.serving_size_amount ?? '';
+    const servUnit = sizeInfo.serving_size_unit ?? mi.serving_size_unit ?? '';
+    const serving = [servAmt, servUnit].filter(Boolean).join(' ') || null;
+
+    existing.push({
+      name: mi.food.name ?? 'Unknown',
+      serving_size: serving,
+      nutrition: {
+        calories: toNum(n.calories),
+        g_protein: toNum(n.g_protein),
+        g_carbs: toNum(n.g_carbs),
+        g_fat: toNum(n.g_fat),
+        g_sugar: toNum(n.g_sugar),
+        mg_sodium: toNum(n.mg_sodium),
+      },
+    });
+  }
+
+  const stationLabels = Object.keys(byoStationCategories);
+  if (stationLabels.length === 0) return;
+
+  const autoCategories = stationLabels.map(label => ({
+    label: label.replace(/^\w/, c => c.toUpperCase()),
+    items: byoStationCategories[label],
+  }));
+
+  for (const byo of unknownBYO) {
+    byo.byo_components = autoCategories;
+  }
 }
 
 function buildStationMap(menuItems) {
