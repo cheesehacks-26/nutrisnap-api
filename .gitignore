@@ -1,7 +1,4 @@
 client/
 node_modules/
 .env
-gcp-key.json/
-
-
 gcp-key.json
