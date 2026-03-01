@@ -17,9 +17,13 @@ router.get('/', requireAuth, async (req, res) => {
     }
 
     const userId = req.user.id;
+    const requestedHall = req.query.hall;
 
     // --- Stage 1: Parallel data fetch ---
-    const hallIds = Object.keys(DINING_HALLS);
+    // If a specific hall is requested, only fetch that one; otherwise all halls
+    const hallIds = (requestedHall && DINING_HALLS[requestedHall])
+      ? [requestedHall]
+      : Object.keys(DINING_HALLS);
 
     const [menuResults, loggedTotals, targets, savedFoods, profile, mealHistory] =
       await Promise.all([
@@ -108,19 +112,31 @@ router.get('/', requireAuth, async (req, res) => {
 
     // --- Stage 2 & 3: Filter + Score, grouped by hall ---
     const halls = {};
+    const seenFoodIds = new Set();
 
     for (const result of menuResults) {
       if (result.status !== 'fulfilled') continue;
       const { hallId, items } = result.value;
       if (!items || items.length === 0) continue;
 
+      const hallInfo = DINING_HALL_INFO.find(h => h.id === hallId);
+      const hallName = hallInfo?.shortName || hallId;
+
       const scored = [];
       for (const food of items) {
+        // Skip BYO sub-components (individual breads, proteins, etc.)
+        if (food.is_byo_component) continue;
+
         // Stage 2: Hard filter — skip items matching dietary restrictions
-        if (restrictions.length > 0 && food.food_tags) {
+        // BYO items are always shown since they're customizable
+        if (!food.is_build_your_own && restrictions.length > 0 && food.food_tags) {
           const tags = food.food_tags.map((t) => t.toLowerCase());
           if (restrictions.some((r) => tags.includes(r))) continue;
         }
+
+        // Skip duplicates across halls (same food_id served at multiple locations)
+        const fid = String(food.food_id);
+        if (seenFoodIds.has(fid)) continue;
 
         // Stage 3: Score
         const score = scoreItem(food, remaining, goal, savedIds, historyMap);
@@ -139,12 +155,17 @@ router.get('/', requireAuth, async (req, res) => {
           serving_size: food.serving_size,
           food_tags: food.food_tags,
           is_saved: savedIds.has(String(food.food_id)),
+          hall: hallId,
+          hall_name: hallName,
         });
       }
 
       // Stage 4: Sort descending by score, keep top 5
       scored.sort((a, b) => b.score - a.score);
       const top = scored.slice(0, 5);
+
+      // Mark these food_ids as seen so other halls won't duplicate them
+      for (const item of top) seenFoodIds.add(String(item.food_id));
 
       if (top.length > 0) {
         halls[hallId] = top;

@@ -32,7 +32,8 @@ router.post('/', async (req, res) => {
     const date = getTodayCT();
 
     // Step 1: Fetch today's menu for this hall/meal (cached — instant)
-    const menuItems = await fetchMenu(hall, meal, date);
+    const allMenuItems = await fetchMenu(hall, meal, date);
+    const menuItems = allMenuItems.filter(i => !i.is_byo_component);
 
     if (menuItems.length === 0) {
       return res.status(404).json({ error: 'No menu available for this hall/meal today' });

@@ -15,6 +15,7 @@ const BYO_COMPONENTS = {
           { nested_id: 1847783, name: 'Non Fat Plain Greek Yogurt', serving_size: '0.25 cups', nutrition: { calories: 35, g_protein: 6, g_carbs: 3, g_fat: 0, g_sugar: 2, mg_sodium: 25 } },
           { nested_id: 1340429, name: 'Vanilla Greek Yogurt',      serving_size: '0.25 cups', nutrition: { calories: 50, g_protein: 5, g_carbs: 6, g_fat: 0.5, g_sugar: 5, mg_sodium: 20 } },
           { nested_id: 1340430, name: 'Vanilla Coconut Milk Yogurt', serving_size: '0.25 cups', nutrition: { calories: 45, g_protein: 0, g_carbs: 7, g_fat: 2, g_sugar: 5, mg_sodium: 10 } },
+          { name: 'Strawberry Greek Yogurt',                         serving_size: '0.25 cups', nutrition: { calories: 55, g_protein: 5, g_carbs: 8, g_fat: 0, g_sugar: 7, mg_sodium: 20 } },
         ],
       },
       {
@@ -202,6 +203,49 @@ const BYO_COMPONENTS = {
     ],
   },
 
+  // ─── Build Your Own Pasta Bar (Carsons) ─────────────────────────
+  7633: {
+    name: 'Build Your Own Pasta Bar (Carsons)',
+    categories: [
+      {
+        label: 'Choose Your Pasta',
+        items: [
+          { name: 'Penne Pasta',                       serving_size: '1 cup',     nutrition: { calories: 200, g_protein: 7, g_carbs: 42, g_fat: 1, g_sugar: 2, mg_sodium: 1 } },
+          { name: 'Spaghetti',                         serving_size: '1 cup',     nutrition: { calories: 220, g_protein: 8, g_carbs: 43, g_fat: 1, g_sugar: 1, mg_sodium: 1 } },
+          { name: 'Rotini Pasta',                      serving_size: '1 cup',     nutrition: { calories: 210, g_protein: 7, g_carbs: 42, g_fat: 1, g_sugar: 2, mg_sodium: 1 } },
+          { name: 'Gluten Free Penne',                 serving_size: '1 cup',     nutrition: { calories: 190, g_protein: 4, g_carbs: 43, g_fat: 1, g_sugar: 0, mg_sodium: 5 } },
+        ],
+      },
+      {
+        label: 'Choose Your Sauce',
+        items: [
+          { name: 'Marinara Sauce',                    serving_size: '0.5 cup',   nutrition: { calories: 70, g_protein: 2, g_carbs: 10, g_fat: 2, g_sugar: 6, mg_sodium: 480 } },
+          { name: 'Alfredo Sauce',                     serving_size: '0.25 cup',  nutrition: { calories: 110, g_protein: 2, g_carbs: 3, g_fat: 10, g_sugar: 1, mg_sodium: 380 } },
+          { name: 'Pesto Sauce',                       serving_size: '2 Tbsp',    nutrition: { calories: 80, g_protein: 2, g_carbs: 2, g_fat: 7, g_sugar: 0, mg_sodium: 230 } },
+          { name: 'Olive Oil & Garlic',                serving_size: '1 Tbsp',    nutrition: { calories: 120, g_protein: 0, g_carbs: 0, g_fat: 14, g_sugar: 0, mg_sodium: 0 } },
+        ],
+      },
+      {
+        label: 'Choose Your Protein',
+        items: [
+          { name: 'Grilled Chicken',                   serving_size: '3 oz',      nutrition: { calories: 130, g_protein: 20, g_carbs: 0, g_fat: 5, g_sugar: 0, mg_sodium: 60 } },
+          { name: 'Italian Sausage',                   serving_size: '1 link',    nutrition: { calories: 200, g_protein: 13, g_carbs: 2, g_fat: 16, g_sugar: 1, mg_sodium: 550 } },
+          { name: 'Meatballs',                         serving_size: '2 each',    nutrition: { calories: 160, g_protein: 12, g_carbs: 6, g_fat: 10, g_sugar: 1, mg_sodium: 420 } },
+        ],
+      },
+      {
+        label: 'Choose Your Toppings',
+        items: [
+          { name: 'Parmesan Cheese',                   serving_size: '1 Tbsp',    nutrition: { calories: 22, g_protein: 2, g_carbs: 0, g_fat: 1.5, g_sugar: 0, mg_sodium: 76 } },
+          { name: 'Red Pepper Flakes',                 serving_size: '0.5 tsp',   nutrition: { calories: 3, g_protein: 0, g_carbs: 1, g_fat: 0, g_sugar: 0, mg_sodium: 0 } },
+          { name: 'Sauteed Mushrooms',                 serving_size: '0.25 cup',  nutrition: { calories: 14, g_protein: 1, g_carbs: 2, g_fat: 0.5, g_sugar: 1, mg_sodium: 2 } },
+          { name: 'Roasted Broccoli',                  serving_size: '0.25 cup',  nutrition: { calories: 15, g_protein: 1, g_carbs: 2, g_fat: 0.5, g_sugar: 0, mg_sodium: 8 } },
+          { name: 'Garlic Bread',                      serving_size: '1 slice',   nutrition: { calories: 150, g_protein: 3, g_carbs: 18, g_fat: 7, g_sugar: 1, mg_sodium: 240 } },
+        ],
+      },
+    ],
+  },
+
   // ─── Build Your Own Stir Fry ─────────────────────────────────────
   4784: {
     name: 'Build Your Own Stir Fry',
@@ -273,12 +317,43 @@ const BYO_COMPONENTS = {
   },
 };
 
-function getBYOComponents(foodId) {
-  return BYO_COMPONENTS[foodId] || null;
+const BYO_NAME_MAP = {};
+for (const [id, data] of Object.entries(BYO_COMPONENTS)) {
+  BYO_NAME_MAP[data.name.toLowerCase()] = { id: Number(id), ...data };
+}
+
+function getBYOComponents(foodId, foodName) {
+  if (BYO_COMPONENTS[foodId]) return BYO_COMPONENTS[foodId];
+  if (foodName) {
+    const key = foodName.toLowerCase().trim();
+    if (BYO_NAME_MAP[key]) return BYO_NAME_MAP[key];
+    for (const [pattern, data] of Object.entries(BYO_NAME_MAP)) {
+      if (key.includes(pattern) || pattern.includes(key)) return data;
+    }
+  }
+  return null;
 }
 
 function getAllBYOIds() {
   return new Set(Object.keys(BYO_COMPONENTS).map(Number));
 }
 
-module.exports = { getBYOComponents, getAllBYOIds, BYO_COMPONENTS };
+const _subNameSet = new Set();
+for (const data of Object.values(BYO_COMPONENTS)) {
+  for (const cat of data.categories) {
+    for (const item of cat.items) {
+      _subNameSet.add(item.name.toLowerCase());
+    }
+  }
+}
+
+const _alwaysByoPattern = /greek yogurt|coconut milk yogurt/i;
+
+function isBYOSubName(foodName, ignoreStation = false) {
+  if (!foodName) return false;
+  if (ignoreStation && _alwaysByoPattern.test(foodName)) return true;
+  const key = foodName.toLowerCase().replace(/\s*\(.*?\)\s*/g, "").trim();
+  return _subNameSet.has(key);
+}
+
+module.exports = { getBYOComponents, getAllBYOIds, isBYOSubName, BYO_COMPONENTS };

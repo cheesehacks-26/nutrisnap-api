@@ -46,7 +46,8 @@ router.get('/', async (req, res) => {
   }
 
   try {
-    const items = await fetchMenu(hall, meal, resolvedDate);
+    const allItems = await fetchMenu(hall, meal, resolvedDate);
+    const items = allItems.filter(i => !i.is_byo_component);
     res.json({ hall, meal, date: resolvedDate, count: items.length, items });
   } catch (err) {
     if (err.status === 404) {
