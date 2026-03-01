@@ -1,5 +1,5 @@
 {
-  "name": "badgerbite-api",
+  "name": "nutrisnap-api",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cheesehacks-26/badgerbite-api.git"
+    "url": "git+https://github.com/cheesehacks-26/nutrisnap-api.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/cheesehacks-26/badgerbite-api/issues"
+    "url": "https://github.com/cheesehacks-26/nutrisnap-api/issues"
   },
-  "homepage": "https://github.com/cheesehacks-26/badgerbite-api#readme",
+  "homepage": "https://github.com/cheesehacks-26/nutrisnap-api#readme",
   "dependencies": {
     "@google-cloud/vertexai": "^1.10.0",
     "@google/generative-ai": "^0.24.1",

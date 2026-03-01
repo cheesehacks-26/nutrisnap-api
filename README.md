@@ -1,4 +1,13 @@
-# API Endpoints
+# NutriSnap API
+
+Backend for NutriSnap: nutrition tracking, dining hall menus (Nutrislice), and AI-powered food identification.
+
+## Setup
+
+1. Copy `.env.example` to `.env` and fill in your Supabase and (optionally) GCP credentials.
+2. `npm install` then `npm run dev` or `npm start`.
+
+## API Endpoints
 
 All authenticated endpoints require `Authorization: Bearer <token>` header.
 
@@ -69,6 +78,12 @@ Auto-recalculates when profile fields (sex, age, weight, height, goal, activity)
 | `GET`  | `/api/history?days=7` | Daily calorie/macro totals for past N days   |
 
 Returns per-day totals + user's targets for chart comparison. Max 30 days.
+
+### Streak
+
+| Method | Endpoint       | Description                                      |
+| ------ | -------------- | ------------------------------------------------ |
+| `GET`  | `/api/streak`  | Current logging streak, longest streak, logged today |
 
 ### Recommendations
 

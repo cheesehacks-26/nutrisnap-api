@@ -35,7 +35,7 @@ app.use('/api/history', historyRoutes);
 app.use('/api/streak', streakRoutes);
 
 app.get('/', (req, res) => {
-  res.json({ message: 'BadgerBite API' });
+  res.json({ message: 'NutriSnap API' });
 });
 
 
@@ -53,6 +53,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`BadgerBite API running on port ${PORT}`);
+  console.log(`NutriSnap API running on port ${PORT}`);
   warmCache();
 });
