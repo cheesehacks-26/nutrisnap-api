@@ -1,7 +1,14 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { VertexAI } = require('@google-cloud/vertexai');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+const vertexAI = new VertexAI({
+  project: process.env.GCP_PROJECT_ID || 'nutrisnap-488901',
+  location: process.env.GCP_LOCATION || 'us-central1',
+});
+
+const model = vertexAI.getGenerativeModel({
+  model: 'gemini-2.0-flash',
+  generationConfig: { maxOutputTokens: 256 },
+});
 
 /**
  * Identify food items in a photo by matching against the current dining hall menu.
@@ -40,17 +47,24 @@ Do not include any text outside the JSON.`;
   // Strip data URL prefix if present
   const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
 
-  const result = await model.generateContent([
-    prompt,
-    {
-      inlineData: {
-        mimeType: 'image/jpeg',
-        data: cleanBase64,
+  const result = await model.generateContent({
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: cleanBase64,
+            },
+          },
+        ],
       },
-    },
-  ]);
+    ],
+  });
 
-  const text = result.response.text().trim();
+  const text = result.response.candidates[0].content.parts[0].text.trim();
 
   // Parse JSON from response (handle markdown code blocks)
   const jsonStr = text.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();

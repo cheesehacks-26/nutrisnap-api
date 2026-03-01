@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/cheesehacks-26/badgerbite-api#readme",
   "dependencies": {
+    "@google-cloud/vertexai": "^1.10.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.98.0",
     "axios": "^1.13.6",

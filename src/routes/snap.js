@@ -26,8 +26,8 @@ router.post('/', requireAuth, async (req, res) => {
       return res.status(400).json({ error: `Invalid meal. Valid: ${VALID_MEALS.join(', ')}` });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(503).json({ error: 'Vision service not configured (missing GEMINI_API_KEY)' });
+    if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      return res.status(503).json({ error: 'Vision service not configured (missing GOOGLE_APPLICATION_CREDENTIALS)' });
     }
 
     const date = getTodayCT();
