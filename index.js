@@ -11,7 +11,7 @@ const recommendRoutes = require('./src/routes/recommend');
 const logRoutes = require('./src/routes/log');
 const savedFoodsRoutes = require('./src/routes/savedFoods');
 const { router: targetsRoutes } = require('./src/routes/targets');
-const { router: snapRoutes } = require('./src/routes/snap');
+const snapRoutes = require('./src/routes/snap');
 const historyRoutes = require('./src/routes/history');
 
 
