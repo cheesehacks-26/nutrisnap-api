@@ -11,16 +11,20 @@ const ACTIVITY_MULTIPLIERS = {
   very_active: 1.9,
 };
 
-// Shared: calculate and upsert daily targets from a profile row
-async function recalcTargets(userId) {
-  const { data: profile, error: profileErr } = await supabaseAdmin
-    .from('profiles')
-    .select('sex, age, height_in, weight_lbs, goal, activity_level')
-    .eq('user_id', userId)
-    .single();
-
-  if (profileErr) return { error: profileErr.message };
-  if (!profile.sex || !profile.age || !profile.height_in || !profile.weight_lbs) {
+// Shared: calculate and upsert daily targets from a profile row.
+// profileOverride: optional object with sex, age, height_in, weight_lbs, goal, activity_level (use after profile update to avoid re-read).
+async function recalcTargets(userId, profileOverride = null) {
+  let profile = profileOverride;
+  if (!profile) {
+    const { data, error: profileErr } = await supabaseAdmin
+      .from('profiles')
+      .select('sex, age, height_in, weight_lbs, goal, activity_level')
+      .eq('user_id', userId)
+      .single();
+    if (profileErr) return { error: profileErr.message };
+    profile = data;
+  }
+  if (!profile || !profile.sex || !profile.age || !profile.height_in || !profile.weight_lbs) {
     return { error: 'Profile incomplete — need sex, age, height_in, weight_lbs' };
   }
 
@@ -69,10 +73,10 @@ router.get('/', requireAuth, async (req, res) => {
     .eq('user_id', req.user.id)
     .order('calculated_at', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json({ targets: data });
+  res.json({ targets: data || null });
 });
 
 module.exports = { router, recalcTargets };
