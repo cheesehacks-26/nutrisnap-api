@@ -76,17 +76,23 @@ router.get('/', requireAuth, async (req, res) => {
     const goal = profile.data?.goal || 'maintain';
     const restrictions = (profile.data?.dietary_restrictions || []).map((r) => r.toLowerCase());
 
-    // Map profile restriction keys → the food tag name (lowercased) that proves a food is safe.
-    // Restrictions with no direct food-tag equivalent (no_fish, kosher, etc.) cannot be
-    // enforced via tags and are silently skipped rather than incorrectly filtering everything out.
-    const RESTRICTION_TO_TAG = {
-      vegan:       'vegan',
-      vegetarian:  'vegetarian',
-      halal:       'halal',
-      dairy_free:  'dairy-free',
-      gluten_free: 'gluten-free',
-      no_eggs:     'egg-free',
-      no_soy:      'soy-free',
+    // Nutrislice uses two kinds of food icons:
+    //   behavior=2 → diet label: food IS suitable for this diet (vegan, vegetarian, halal)
+    //   behavior=1 → allergen marker: food CONTAINS this ingredient (dairy, egg, wheat, soy, fish)
+    //
+    // MUST_HAVE: food must carry this tag (diet-positive label)
+    const MUST_HAVE_TAG = {
+      vegan:      'vegan',
+      vegetarian: 'vegetarian',
+      halal:      'halal',
+    };
+    // MUST_NOT_HAVE: food must NOT carry this tag (allergen present = food is unsafe)
+    const MUST_NOT_HAVE_TAG = {
+      dairy_free:  'dairy',
+      gluten_free: 'wheat',
+      no_eggs:     'egg',
+      no_soy:      'soy',
+      no_fish:     'fish',
     };
 
     // Sum today's logged macros
@@ -148,15 +154,13 @@ router.get('/', requireAuth, async (req, res) => {
         if (food.is_byo_component) continue;
 
         // Stage 2: Hard filter — only surface items that satisfy all dietary restrictions.
-        // For each restriction that has a known food-tag equivalent, the food MUST carry
-        // that tag (e.g. a gluten-free user only sees items tagged "Gluten-Free").
         // BYO items always pass because the user customises their own build.
         if (!food.is_build_your_own && restrictions.length > 0) {
           const tags = (food.food_tags || []).map((t) => t.toLowerCase());
           const isSafe = restrictions.every((r) => {
-            const requiredTag = RESTRICTION_TO_TAG[r];
-            if (!requiredTag) return true; // no tag equivalent — cannot filter, keep the item
-            return tags.includes(requiredTag);
+            if (MUST_HAVE_TAG[r])     return tags.includes(MUST_HAVE_TAG[r]);    // food must be labelled safe
+            if (MUST_NOT_HAVE_TAG[r]) return !tags.includes(MUST_NOT_HAVE_TAG[r]); // food must not contain allergen
+            return true; // unknown restriction key — cannot enforce, keep item
           });
           if (!isSafe) continue;
         }
