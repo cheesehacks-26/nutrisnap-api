@@ -8,20 +8,23 @@ const GOAL_WEIGHTS = {
 /**
  * Score a single food item (0–100).
  *
- * @param {object} food        - CanteenFoodItem from fetchMenu
- * @param {object} remaining   - { calories, protein_g, carbs_g, fat_g } left for the day
- * @param {string} goal        - 'bulk' | 'cut' | 'maintain'
- * @param {Set}    savedIds    - Set of food_id strings the user saved
- * @param {Map}    historyMap  - Map<food_id, { count, daysSinceLast }>
+ * @param {object} food             - CanteenFoodItem from fetchMenu
+ * @param {object} remaining        - { calories, protein_g, carbs_g, fat_g } left for the day
+ * @param {string} goal             - 'bulk' | 'cut' | 'maintain'
+ * @param {Set}    savedIds         - Set of food_id strings the user saved
+ * @param {Map}    historyMap       - Map<food_id, { count, daysSinceLast }>
+ * @param {Set}    [todayLoggedIds] - Set of food_id strings already logged today
  * @returns {number} score 0–100
  */
-function scoreItem(food, remaining, goal, savedIds, historyMap) {
+function scoreItem(food, remaining, goal, savedIds, historyMap, todayLoggedIds = new Set()) {
   const macroFit = calcMacroFit(food, remaining, goal);       // 0–50
   const goalBias = calcGoalBias(food, goal);                   // 0–20
   const familiarity = calcFamiliarity(food, savedIds);         // 0–10
   const learned = calcLearnedPreference(food, historyMap);     // 0–20
+  // Mild variety nudge: downrank items already eaten today so users see fresh options
+  const repeatPenalty = todayLoggedIds.has(String(food.food_id)) ? 15 : 0;
 
-  return Math.round(Math.min(100, Math.max(0, macroFit + goalBias + familiarity + learned)));
+  return Math.round(Math.min(100, Math.max(0, macroFit + goalBias + familiarity + learned - repeatPenalty)));
 }
 
 // --- A. Macro Fit (max 50 pts) ---
@@ -85,8 +88,11 @@ function calcGoalBias(food, goal) {
     return Math.max(0, fiberBonus + 10 - fatPenalty);
   }
 
-  // maintain — small uniform bonus
-  return 10;
+  // maintain — reward moderate protein density, penalise very high fat
+  const densityM = n.calories > 0 ? (n.g_protein / n.calories) * 100 : 0;
+  const proteinBonus = Math.min(10, densityM * 1.5);    // up to 10 pts
+  const fatPenalty   = n.g_fat > 15 ? Math.min(8, (n.g_fat - 15) * 0.4) : 0;
+  return Math.min(20, Math.max(0, 5 + proteinBonus - fatPenalty));
 }
 
 // --- C. Familiarity / Saved (max 10 pts) ---

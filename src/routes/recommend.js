@@ -76,6 +76,19 @@ router.get('/', requireAuth, async (req, res) => {
     const goal = profile.data?.goal || 'maintain';
     const restrictions = (profile.data?.dietary_restrictions || []).map((r) => r.toLowerCase());
 
+    // Map profile restriction keys → the food tag name (lowercased) that proves a food is safe.
+    // Restrictions with no direct food-tag equivalent (no_fish, kosher, etc.) cannot be
+    // enforced via tags and are silently skipped rather than incorrectly filtering everything out.
+    const RESTRICTION_TO_TAG = {
+      vegan:       'vegan',
+      vegetarian:  'vegetarian',
+      halal:       'halal',
+      dairy_free:  'dairy-free',
+      gluten_free: 'gluten-free',
+      no_eggs:     'egg-free',
+      no_soy:      'soy-free',
+    };
+
     // Sum today's logged macros
     const logged = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
     if (loggedTotals.data) {
@@ -110,6 +123,13 @@ router.get('/', requireAuth, async (req, res) => {
     // Build history map for learned preference
     const historyMap = buildHistoryMap(mealHistory.data || [], date);
 
+    // Build today's logged food_id set (for repeat-item penalty)
+    const todayLoggedIds = new Set(
+      (mealHistory.data || [])
+        .filter(log => log.logged_at >= date + 'T00:00:00')
+        .map(log => String(log.food_id))
+    );
+
     // --- Stage 2 & 3: Filter + Score, grouped by hall ---
     const halls = {};
     const seenFoodIds = new Set();
@@ -127,11 +147,18 @@ router.get('/', requireAuth, async (req, res) => {
         // Skip BYO sub-components (individual breads, proteins, etc.)
         if (food.is_byo_component) continue;
 
-        // Stage 2: Hard filter — skip items matching dietary restrictions
-        // BYO items are always shown since they're customizable
-        if (!food.is_build_your_own && restrictions.length > 0 && food.food_tags) {
-          const tags = food.food_tags.map((t) => t.toLowerCase());
-          if (restrictions.some((r) => tags.includes(r))) continue;
+        // Stage 2: Hard filter — only surface items that satisfy all dietary restrictions.
+        // For each restriction that has a known food-tag equivalent, the food MUST carry
+        // that tag (e.g. a gluten-free user only sees items tagged "Gluten-Free").
+        // BYO items always pass because the user customises their own build.
+        if (!food.is_build_your_own && restrictions.length > 0) {
+          const tags = (food.food_tags || []).map((t) => t.toLowerCase());
+          const isSafe = restrictions.every((r) => {
+            const requiredTag = RESTRICTION_TO_TAG[r];
+            if (!requiredTag) return true; // no tag equivalent — cannot filter, keep the item
+            return tags.includes(requiredTag);
+          });
+          if (!isSafe) continue;
         }
 
         // Skip duplicates across halls (same food_id served at multiple locations)
@@ -139,7 +166,7 @@ router.get('/', requireAuth, async (req, res) => {
         if (seenFoodIds.has(fid)) continue;
 
         // Stage 3: Score
-        const score = scoreItem(food, remaining, goal, savedIds, historyMap);
+        const score = scoreItem(food, remaining, goal, savedIds, historyMap, todayLoggedIds);
 
         scored.push({
           food_id: food.food_id,
