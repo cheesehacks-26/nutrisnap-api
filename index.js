@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { warmCache } = require('./src/services/nutrislice');
+const { DEV_ACCESS_ENABLED } = require('./src/middleware/auth');
 const menuRoutes = require('./src/routes/menu');
 const diningHallRoutes = require('./src/routes/diningHalls');
 const authRoutes = require('./src/routes/auth');
@@ -102,5 +103,8 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`NutriSnap API running on port ${PORT}`);
+  if (DEV_ACCESS_ENABLED) {
+    console.warn('⚠️  DEV ACCESS ENABLED — DEV_ACCESS_TOKEN acts as user ' + process.env.DEV_USER_ID + '. Never enable in production.');
+  }
   warmCache();
 });

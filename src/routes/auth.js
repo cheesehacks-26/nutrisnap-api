@@ -21,6 +21,7 @@ router.post('/login', async (req, res) => {
 
 // POST /auth/logout
 router.post('/logout', requireAuth, async (req, res) => {
+  if (req.user.is_dev) return res.json({ success: true }); // no Supabase session to revoke
   const token = req.headers.authorization.split('Bearer ')[1];
   const { error } = await supabase.auth.admin.signOut(token);
   if (error) return res.status(500).json({ error: error.message });

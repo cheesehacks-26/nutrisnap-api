@@ -17,6 +17,9 @@ const GOAL_WEIGHTS = {
  * @returns {number} score 0–100
  */
 function scoreItem(food, remaining, goal, savedIds, historyMap, todayLoggedIds = new Set()) {
+  // Items with no nutrition data (synthetic BYO shells, parse failures) can't be scored.
+  if (!food?.nutrition) return 0;
+
   const macroFit = calcMacroFit(food, remaining, goal);       // 0–50
   const goalBias = calcGoalBias(food, goal);                   // 0–20
   const familiarity = calcFamiliarity(food, savedIds);         // 0–10
